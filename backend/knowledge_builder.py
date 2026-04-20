@@ -5,18 +5,25 @@ import chromadb
 from chromadb.utils import embedding_functions
 import time
 from urllib.parse import urljoin
-import fitz  # 对应 pymupdf 库
+import fitz  # 对应 PyMuPDF 库
 
-# --- 配置区 ---
+# --- 核心路径配置 (已修复幽灵路径问题) ---
+# 获取 backend 目录
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+# 获取项目根目录 (向上退一级)
+ROOT_DIR = os.path.dirname(BACKEND_DIR)
+
+# PDF 存放在 backend 里
+PDF_VAULT = os.path.join(BACKEND_DIR, "pdf_vault")
+# 强制指向根目录的真实数据库！
+DB_PATH = os.path.join(ROOT_DIR, "metaphysics_db")
+
 # 1. 网页抓取列表
 ROOT_URLS = [
     "https://zh.wikisource.org/wiki/渊海子平",
     "https://zh.wikisource.org/wiki/滴天髓",
     "https://zh.wikisource.org/wiki/三命通会"
 ]
-
-# 2. 本地 PDF 存放目录
-PDF_VAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pdf_vault")
 
 def get_chapter_links(url):
     """提取目录页下的所有子章节链接"""
@@ -71,10 +78,8 @@ def process_pdfs(collection):
             print(f"  解析失败 {file_name}: {e}")
 
 def build_database():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(base_dir, "metaphysics_db")
-    
-    client = chromadb.PersistentClient(path=db_path)
+    print(f"🔗 正在连接核心数据库: {DB_PATH}")
+    client = chromadb.PersistentClient(path=DB_PATH)
     emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name="paraphrase-multilingual-MiniLM-L12-v2"
     )
@@ -101,12 +106,13 @@ def build_database():
                     print(f"  已存入 {url}")
                 processed_urls.add(url)
                 time.sleep(0.5)
-            except: pass
+            except Exception as e:
+                print(f"抓取页面失败 {url}: {e}")
 
     # 2. 处理本地 PDF 数据 (现代著作/论文)
     process_pdfs(collection)
 
-    print("\n--- 命理知识库全量构建完成 ---")
+    print("\n🎉 命理知识库全量构建完成！请重启后端服务。")
 
 if __name__ == "__main__":
     build_database()

@@ -10,3 +10,15 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 .DS_Store
+
+# 忽略虚拟环境
+venv/
+.venv/
+
+# 忽略数据文件夹 (这里非常重要，根据你的截图)
+data/
+
+# 忽略缓存和临时文件
+__pycache__/
+.DS_Store
+.env
